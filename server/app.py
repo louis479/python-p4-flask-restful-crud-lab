@@ -31,7 +31,7 @@ class Plants(Resource):
             image=data['image'],
             price=data['price'],
         )
-
+            
         db.session.add(new_plant)
         db.session.commit()
 
@@ -42,14 +42,44 @@ api.add_resource(Plants, '/plants')
 
 
 class PlantByID(Resource):
-
     def get(self, id):
         plant = Plant.query.filter_by(id=id).first().to_dict()
         return make_response(jsonify(plant), 200)
 
+    def patch(self, id):
+        plant = Plant.query.filter_by(id=id).first()
+        if not plant:
+            return make_response(jsonify({"error": "Plant not found"}), 404)
+            
+        data = request.get_json()
+        
+        # Update only provided fields
+        if 'is_in_stock' in data:
+            plant.is_in_stock = data['is_in_stock']
+        if 'name' in data:
+            plant.name = data['name']
+        if 'price' in data:
+            plant.price = data['price']
+        if 'image' in data:
+            plant.image = data['image']
+            
+        db.session.commit()
+        return make_response(plant.to_dict(), 200)
+    
+    def delete(self, id):
+        plant = Plant.query.filter_by(id=id).first()
+        if not plant:
+            return make_response(jsonify({"error": "Plant not found"}), 404)
+        db.session.delete(plant)
+        db.session.commit()
+        return make_response('', 204)
 
 api.add_resource(PlantByID, '/plants/<int:id>')
 
+
+@app.route('/')
+def home():
+    return "Welcome to the Plants API! Try /plants endpoint", 200
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
